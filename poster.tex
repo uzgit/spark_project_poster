@@ -60,6 +60,10 @@
 
   \begin{alertblock}{Problem Description}
 
+    The goal of this project is to land a drone autonomously and accurately on a safe landing pad.
+    Our contribution to the previous work is to also leverage the gimbal-mounted camera for tracking,
+    and to provide a new family of embeddable and computationally inexpensive April Tag markers.
+
     Landing is a hard part of autonomous drone flight because it is risky and requires high precision.
     GPS alone does not provide a sufficiently accurate position estimate for landing,
     so we have to use other means.
@@ -76,15 +80,25 @@
 
   \begin{block}{Methods}
 
-    Nam vulputate nunc felis, non condimentum lacus porta ultrices. Nullam sed
-    sagittis metus. Etiam consectetur gravida urna quis suscipit.
+    \heading{Flight Control Software}
 
-    \begin{itemize}
-      \item \textbf{Mauris tempor} risus nulla, sed ornare
-      \item \textbf{Libero tincidunt} a duis congue vitae
-    \end{itemize}
+    DJI provides proprietary flight control software on its drones,
+    and we interact with it through a \textbf{Mobile SDK} interface
+    to give high level commands (i.e.~``go left,'' ``go forward,'' ``land,'' etc).
+    With no input the flight control software keeps the drone almost perfectly still.
 
-    \lipsum[2]
+    \heading{Localization \& Tracking with April Tag 48h12}
+
+    We use a fiducial marker system called April Tag to locate the landing pad in real time using the drone's onboard camera.
+    The system can determine a marker's \textbf{pose} (position + orientation) in space with respect to the camera.
+    Using coordinate system transforms, we can rotate the pose by the inverse of the pitch and roll components of the orientation,
+    and this gives the position of the drone in the coordinate frame of landing pad (ignoring yaw).
+    From this, we can determine which direction the drone must move in order to approach the landing pad.
+    The drone uses the yaw of the landing pad to align itself once it is sufficiently close in order to make the landing pad easier to track.
+    The April Tag system also determines the $(x,y)$ pixel positions of the centers of any detected markers,
+    which are normalized in the interval $[-1,1]$.
+    This makes it easy to track the landing pad (i.e.~keep its $(x,y)$ pixel positions near $(0,0)$)
+    so that it is cenetered in the camera frame and not lost during approach.
 
   \end{block}
 
@@ -110,20 +124,8 @@
 
     \begin{figure}
       \centering
-      \begin{tikzpicture}
-        \begin{axis}[
-            scale only axis,
-            no markers,
-            domain=0:2*pi,
-            samples=100,
-            axis lines=center,
-            axis line style={-},
-            ticks=none]
-          \addplot[red] {sin(deg(x))};
-          \addplot[blue] {cos(deg(x))};
-        \end{axis}
-      \end{tikzpicture}
-      \caption{Another figure caption.}
+      \includegraphics[width=\linewidth]{images/spark_architecture.drawio}
+      \caption{System data flow.}
     \end{figure}
 
     \lipsum[15]
