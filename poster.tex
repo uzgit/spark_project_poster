@@ -40,7 +40,7 @@
 % Title
 % ====================
 
-\title{Fiducial Autonomous Landing with a DJI Spark and April Tags}
+\title{Autonomous Landing with a DJI Spark and April Tags}
 
 \author{Joshua Springer}
 
@@ -60,17 +60,28 @@
 
   \begin{alertblock}{Problem Description}
 
-    The goal of this project is to land a drone autonomously and accurately on a safe landing pad.
-    Our contribution to the previous work is to also leverage the gimbal-mounted camera for tracking,
-    and to provide a new family of embeddable and computationally inexpensive April Tag markers.
+    \heading{Goal}
 
-    Landing is a hard part of autonomous drone flight because it is risky and requires high precision.
-    GPS alone does not provide a sufficiently accurate position estimate for landing,
-    so we have to use other means.
-    Fiducial markers can allow a drone to recognize a landing pad cheaply and relatively reliably.
-    Previous methods have used a fixed, downward facing camera to identify fiducial markers on a landing pad,
-    with the disadvantage that they can easily lose track of it.
-    This project presents a method of autonomous fiducial landing with a gimbal-mounted camera that can track the marker,
+    \begin{itemize}
+      \item Autonomously land a drone on a landing pad marked with a fiducial marker.
+      \item Identify the landing pad via a gimbal-mounted, monocular camera that tracks the fiducial marker (to increase detection range).
+      \item Distinguish between multiple landing pads and actively choose one for landing.
+      \item Search for landing pads safely if one is not yet found.
+    \end{itemize}
+
+    \heading{Key Background Points}
+
+    \begin{itemize}
+      \item Landing is a hard part of autonomous drone flight because it is risky and requires high precision.
+      \item GPS alone does not provide a sufficiently accurate position estimate for landing.
+      \item Fiducial markers can allow a drone to recognize a landing pad cheaply and accurately, unlike GPS.
+      \item Previous methods have used a fixed, downward facing camera to identify fiducial markers on a landing pad,
+            with the disadvantage that they can easily lose track of it.
+    \end{itemize}
+
+    \heading{Contribution}
+
+    In this project, the gimbal-mounted camera tracks the landing pad,
     giving the advantage that the drone doesn't lose sight of the landing pad easily,
     but with the disadvantage that the drone must accurately detect not only the position,
     but also the orientation of the landing pad.
@@ -80,25 +91,16 @@
 
   \begin{block}{Methods}
 
-    \heading{Flight Control Software}
-
-    DJI provides proprietary flight control software on its drones,
-    and we interact with it through a \textbf{Mobile SDK} interface
-    to give high level commands (i.e.~``go left,'' ``go forward,'' ``land,'' etc).
-    With no input the flight control software keeps the drone almost perfectly still.
-
-    \heading{Localization \& Tracking with April Tag 48h12}
-
-    We use a fiducial marker system called April Tag to locate the landing pad in real time using the drone's onboard camera.
-    The system can determine a marker's \textbf{pose} (position + orientation) in space with respect to the camera.
-    Using coordinate system transforms, we can rotate the pose by the inverse of the pitch and roll components of the orientation,
-    and this gives the position of the drone in the coordinate frame of landing pad (ignoring yaw).
-    From this, we can determine which direction the drone must move in order to approach the landing pad.
-    The drone uses the yaw of the landing pad to align itself once it is sufficiently close in order to make the landing pad easier to track.
-    The April Tag system also determines the $(x,y)$ pixel positions of the centers of any detected markers,
-    which are normalized in the interval $[-1,1]$.
-    This makes it easy to track the landing pad (i.e.~keep its $(x,y)$ pixel positions near $(0,0)$)
-    so that it is cenetered in the camera frame and not lost during approach.
+    \begin{itemize}
+      \item \textbf{Drone System:} DJI Spark with DJI Mobile SDK.\\This is a cheap and stable drone platform that can be flown indoors.
+                    The DJI Mobile SDK can accept programmatic, high-level commands to ``go left,'' ``rotate right,'' ``decrease altitude'' etc.
+      \item \textbf{Fiducial System:} April Tag.\\This is a well-tested and popular fiducial system which (since April Tag 3) has a flexible layout,
+                    so that many aspects of the markers can be adjusted.
+      \item \textbf{Tracking:} PID Controller.\\A PID controller adjusts the pitch rate of the gimbal
+                    in order to keep the marker in the vertical center of the camera frame.
+      \item \textbf{Approach:} Velocity Targets\\The $x,y,z$ components of the position of the camera
+                    relative to the landing pad are used as velocity targets, which are passed to the Mobile SDK to make the drone approach the landing pad.
+    \end{itemize}
 
   \end{block}
 
@@ -108,7 +110,36 @@
 
 \begin{column}{\colwidth}
 
-  \begin{block}{Marker System}
+  \begin{block}{Marker System: April Tag Custom 24h10}
+    \heading{Overview}
+    \begin{itemize}
+      \item April Tag allows embedding smaller markers inside larger markers,
+            which allows a drone to keep the marker in view even when it is extremely close.
+      \item The default embeddable marker family, April Tag 48h12, is too computationally expensive for embedded hardware, e.g.~Raspberry Pi.
+      \item April Tag 24h10 is a smaller version of April Tag 48h12 that can run at a sufficiently high framerate on embedded hardware.
+    \end{itemize}
+    \heading{Additional Parameters}
+    We have added the following parameters to the default April Tag ROS code for autonomous landing:
+    \begin{itemize}
+      \item \textbf{\texttt{position\_target\_enu}:} the distance from the drone to the landing pad in 3 dimensions.
+                    This is calculated by transforming the \textit{position} of the landing pad by
+                    the inverse of the pitch and roll components of its \textit{orientation} (ignoring yaw).
+                    It is subject to occasional incorrect readings, since it is dependent on the orientation of the marker which cannot always be determined unambiguously.
+      \item \textbf{Normalized pixel centers} $u,v$ of the marker, where $u,v \in [-1,1]$ correspond to the $x,y$ positions respectively.
+                    Values of $-1$ and $1$ indicate the negative and positive extremes of the screen respectively, and $0$ indicates the center.
+                    These are used as inputs to the PID controllers that aim the camera at the marker.
+    \end{itemize}
+
+%    We use a fiducial marker system called April Tag to locate the landing pad in real time using the drone's onboard camera.
+%    The system can determine a marker's \textbf{pose} (position + orientation) in space with respect to the camera.
+%    Using coordinate system transforms, we can rotate the pose by the inverse of the pitch and roll components of the orientation,
+%    and this gives the position of the drone in the coordinate frame of landing pad (ignoring yaw).
+%    From this, we can determine which direction the drone must move in order to approach the landing pad.
+%    The drone uses the yaw of the landing pad to align itself once it is sufficiently close in order to make the landing pad easier to track.
+%    The April Tag system also determines the $(x,y)$ pixel positions of the centers of any detected markers,
+%    which are normalized in the interval $[-1,1]$.
+%    This makes it easy to track the landing pad (i.e.~keep its $(x,y)$ pixel positions near $(0,0)$)
+%    so that it is cenetered in the camera frame and not lost during approach.
 
     \begin{figure}
       \centering
@@ -120,39 +151,13 @@
 
   \begin{alertblock}{System Design \& Equipment}
 
-    \lipsum[10]
-
     \begin{figure}
       \centering
-      \includegraphics[width=\linewidth]{images/spark_architecture.drawio}
+      \includegraphics[width=\linewidth]{images/spark_architecture.drawio.png}
       \caption{System data flow.}
     \end{figure}
 
-    \lipsum[15]
-
   \end{alertblock}
-
-%  \begin{block}{Equipment}
-%
-%    \begin{itemize}
-%      \item \textbf{Sed consequat} id ante vel efficitur. Praesent congue massa
-%        sed est scelerisque, elementum mollis augue iaculis.
-%        \begin{itemize}
-%          \item In sed est finibus, vulputate
-%            nunc gravida, pulvinar lorem. In maximus nunc dolor, sed auctor eros
-%            porttitor quis.
-%          \item Fusce ornare dignissim nisi. Nam sit amet risus vel lacus
-%            tempor tincidunt eu a arcu.
-%          \item Donec rhoncus vestibulum erat, quis aliquam leo
-%            gravida egestas.
-%        \end{itemize}
-%      \item \textbf{Sed luctus, elit sit amet} dictum maximus, diam dolor
-%        faucibus purus, sed lobortis justo erat id turpis.
-%      \item \textbf{Pellentesque facilisis dolor in leo} bibendum congue.
-%        Maecenas congue finibus justo, vitae eleifend urna facilisis at.
-%    \end{itemize}
-%
-%  \end{block}
 
 \end{column}
 
