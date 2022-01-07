@@ -81,20 +81,25 @@
 
     \heading{Contribution}
 
-    In this project, the gimbal-mounted camera tracks the landing pad,
-    giving the advantage that the drone doesn't lose sight of the landing pad easily,
-    but with the disadvantage that the drone must accurately detect not only the position,
-    but also the orientation of the landing pad.
-    The orientation is particularly hard to accurately detect because of the camera's limited pixel resolution and distortions.
+    \begin{itemize}
+      \item \textbf{Gimbal-mounted camera} instead of fixed camera(s) used in previous work.
+                    Provides longer detection range and marker tracking, but means that the detected landing pad position is subject to occasional ambiguities.
+      \item \textbf{April Tag Custom 24h10 family} that allows marker embedding but is more lightweight than the default 48h12 family.
+    \end{itemize}
+%    In this project, the gimbal-mounted camera tracks the landing pad,
+%    giving the advantage that the drone doesn't lose sight of the landing pad easily,
+%    but with the disadvantage that the drone must accurately detect not only the position,
+%    but also the orientation of the landing pad.
+%    The orientation is particularly hard to accurately detect because of the camera's limited pixel resolution and distortions.
 
   \end{alertblock}
 
   \begin{block}{Methods}
 
     \begin{itemize}
-      \item \textbf{Drone System:} DJI Spark with DJI Mobile SDK.\\This is a cheap and stable drone platform that can be flown indoors.
-                    The DJI Mobile SDK can accept programmatic, high-level commands to ``go left,'' ``rotate right,'' ``decrease altitude'' etc.
-      \item \textbf{Fiducial System:} April Tag.\\This is a well-tested and popular fiducial system which (since April Tag 3) has a flexible layout,
+      \item \textbf{Drone System:} DJI Spark with DJI Mobile SDK.\\A cheap and stable drone platform that can be flown indoors.
+                    The DJI Mobile SDK can accept programmatic, high-level commands to "go left," "rotate right," "decrease altitude" etc.
+      \item \textbf{Fiducial System:} April Tag.\\A well-tested and popular fiducial system with a flexible layout,
                     so that many aspects of the markers can be adjusted.
       \item \textbf{Tracking:} PID Controller.\\A PID controller adjusts the pitch rate of the gimbal
                     in order to keep the marker in the vertical center of the camera frame.
@@ -111,15 +116,24 @@
 \begin{column}{\colwidth}
 
   \begin{block}{Marker System: April Tag Custom 24h10}
+
+    \begin{figure}
+      \centering
+      \includegraphics[width=5cm]{images/mosaic.png}
+      \hspace{1cm}
+      \includegraphics[width=5cm]{images/tagCustom24h10_00002_00001_00000}
+      \caption{\textbf{Left:} all tags in the 24h10 family. \textbf{Right:} the landing pad with 3 embedded tags.}
+    \end{figure}
+
     \heading{Overview}
     \begin{itemize}
       \item April Tag allows embedding smaller markers inside larger markers,
-            which allows a drone to keep the marker in view even when it is extremely close.
+            so the drone can see the marker even when extremely close.
       \item The default embeddable marker family, April Tag 48h12, is too computationally expensive for embedded hardware, e.g.~Raspberry Pi.
       \item April Tag 24h10 is a smaller version of April Tag 48h12 that can run at a sufficiently high framerate on embedded hardware.
     \end{itemize}
     \heading{Additional Parameters}
-    We have added the following parameters to the default April Tag ROS code for autonomous landing:
+%    We have added the following parameters to the default April Tag ROS code for autonomous landing:
     \begin{itemize}
       \item \textbf{\texttt{position\_target\_enu}:} the distance from the drone to the landing pad in 3 dimensions.
                     This is calculated by transforming the \textit{position} of the landing pad by
@@ -141,20 +155,17 @@
 %    This makes it easy to track the landing pad (i.e.~keep its $(x,y)$ pixel positions near $(0,0)$)
 %    so that it is cenetered in the camera frame and not lost during approach.
 
-    \begin{figure}
-      \centering
-      \includegraphics[width=5cm]{images/tagCustom24h10_00002_00001_00000}
-      \caption{The landing pad with 3 embedded April Tags of the 24h10 family.}
-    \end{figure}
+
 
   \end{block}
 
-  \begin{alertblock}{System Design \& Equipment}
+  \begin{alertblock}{Data Flow}
 
     \begin{figure}
       \centering
       \includegraphics[width=\linewidth]{images/spark_architecture.drawio.png}
       \caption{System data flow.}
+      \label{figure:data_flow}
     \end{figure}
 
   \end{alertblock}
@@ -165,61 +176,54 @@
 
 \begin{column}{\colwidth}
 
-  \begin{alertblock}{Results}
+  \begin{alertblock}{System \& Behavior Overview}
 
-    Nullam non est elit. In eu ornare justo. Maecenas porttitor sodales lacus,
-    ut cursus augue sodales ac.
+    \begin{itemize}
+      \item Communication with the drone occurs via an Android App (required by DJI Mobile SDK).
+      \item The app provides manual control and real time video to the user.
+      \item April Tag processing is too expensive for the Android tablet - requires a companion board.
+      \item Autonomous control can happen when the companion board is connected (See Figure~\ref{figure:data_flow}).
+    \end{itemize}
 
-    $$
-    \int_{-\infty}^{\infty} e^{-x^2}\,dx = \sqrt{\pi}
-    $$
-
-    Interdum et malesuada fames $\{1, 4, 9, \ldots\}$ ac ante ipsum primis in
-    faucibus. Cras eleifend dolor eu nulla suscipit suscipit. Sed lobortis non
-    felis id vulputate.
-
-    \heading{A heading inside a block}
-
-    Praesent consectetur mi $x^2 + y^2$ metus, nec vestibulum justo viverra
-    nec. Proin eget nulla pretium, egestas magna aliquam, mollis neque. Vivamus
-    dictum $\mathbf{u}^\intercal\mathbf{v}$ sagittis odio, vel porta erat
-    congue sed. Maecenas ut dolor quis arcu auctor porttitor.
-
-    \heading{Another heading inside a block}
-
-    Sed augue erat, scelerisque a purus ultricies, placerat porttitor neque.
-    Donec $P(y \mid x)$ fermentum consectetur $\nabla_x P(y \mid x)$ sapien
-    sagittis egestas. Duis eget leo euismod nunc viverra imperdiet nec id
-    justo.
-
-    \heading{Lipsum}
-    \lipsum[50-51]
-
+    \heading{Test Flight Behavior}
+    \begin{itemize}
+      \item Takeoff to a height of 2m.
+      \item Aim gimbal vertically down, rotate in yaw axis to find takeoff pad.
+      \item Hover above takeoff pad for a few seconds.
+      \item Point gimbal up and down while rotating in yaw axis to find a landing pad.
+      \item Track landing pad vertically with gimbal, and horizontally with drone yaw.
+      \item Approach the landing pad until directly above it.
+      \item Align to landing pad's yaw.
+      \item Descend, keeping the markers in view the entire time.
+      \item Once at minimum altitude, commit to landing.
+    \end{itemize}
   \end{alertblock}
 
-%  \begin{block}{Results}
-%
-%    Class aptent taciti sociosqu ad litora torquent per conubia nostra, per
-%    inceptos himenaeos. Phasellus libero enim, gravida sed erat sit amet,
-%    scelerisque congue diam. Fusce dapibus dui ut augue pulvinar iaculis.
-%
-%    \begin{table}
-%      \centering
-%      \begin{tabular}{l r r c}
-%        \toprule
-%        \textbf{First column} & \textbf{Second column} & \textbf{Third column} & \textbf{Fourth} \\
-%        \midrule
-%        Foo & 13.37 & 384,394 & \alpha \\
-%        Bar & 2.17 & 1,392 & \beta \\
-%        Baz & 3.14 & 83,742 & \delta \\
-%        Qux & 7.59 & 974 & \gamma \\
-%        \bottomrule
-%      \end{tabular}
-%      \caption{A table caption.}
-%    \end{table}
-%
-%  \end{block}
+  \begin{block}{Results}
 
+    The drone autonomously takes off, hovers above takeoff pad, detects/tracks/approaches the landing pad, and lands reliably.
+    \textbf{Scan QR codes top right of this poster for demonstration videos!}
+
+    \begin{figure}
+      \centering
+      \includegraphics[height=7cm]{images/tablet_screenshot}
+      \hspace{1cm}
+      \includegraphics[height=7cm]{images/drone_screenshot}
+      \caption{\textbf{Left:} view from the app. \textbf{Right:} view of the drone and landing pads.}
+    \end{figure}
+
+  \end{block}
+
+  \begin{block}{Future Work}
+    \begin{itemize}
+      \item Test on bigger/better drones.
+      \item Move away from DJI Mobile SDK because it is too constraining.
+            Use DJI Onboard SDK or ArduPilot/PX4 instead.
+      \item Detect previously unknown landing sites (instead of using fiducial markers).
+    \end{itemize}
+  \end{block}
+
+  \vspace{5cm}
   \begin{block}{References}
 
     \nocite{*}
