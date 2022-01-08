@@ -125,6 +125,7 @@
       \caption{\textbf{Left:} all tags in the 24h10 family. \textbf{Right:} the landing pad with 3 embedded tags.}
     \end{figure}
 
+    \vspace{-1cm}
     \heading{Overview}
     \begin{itemize}
       \item April Tag allows embedding smaller markers inside larger markers,
@@ -132,8 +133,8 @@
       \item The default embeddable marker family, April Tag 48h12, is too computationally expensive for embedded hardware, e.g.~Raspberry Pi.
       \item April Tag 24h10 is a smaller version of April Tag 48h12 that can run at a sufficiently high framerate on embedded hardware.
     \end{itemize}
-    \heading{Additional Parameters}
-%    We have added the following parameters to the default April Tag ROS code for autonomous landing:
+    \heading{Additional Message Attributes}
+    We have added the following attributes to the default April Tag ROS code for autonomous landing:
     \begin{itemize}
       \item \textbf{\texttt{position\_target\_enu}:} the distance from the drone to the landing pad in 3 dimensions.
                     This is calculated by transforming the \textit{position} of the landing pad by
@@ -202,7 +203,7 @@
   \begin{block}{Results}
 
     The drone autonomously takes off, hovers above takeoff pad, detects/tracks/approaches the landing pad, and lands reliably.
-    \textbf{Scan QR codes top right of this poster for demonstration videos!}
+    \textbf{Scan QR codes at the top right of this poster for demonstration videos!}
 
     \begin{figure}
       \centering
@@ -217,6 +218,7 @@
   \begin{block}{Future Work}
     \begin{itemize}
       \item Test on bigger/better drones.
+      \item Improve the app.
       \item Move away from DJI Mobile SDK because it is too constraining.
             Use DJI Onboard SDK or ArduPilot/PX4 instead.
       \item Detect previously unknown landing sites (instead of using fiducial markers).
